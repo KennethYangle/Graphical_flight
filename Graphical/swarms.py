@@ -28,8 +28,8 @@ class Swarm:
             self.R = R
         self.drones = list()
         if swarm_pos is not None:
-            print("self.num:", self.num)
-            print("self.R:", self.R)
+            # print("self.num:", self.num)
+            # print("self.R:", self.R)
             for i in range(self.num):
                 drone = Drone(id=i, camp=self.camp, drone_pos=swarm_pos[i], R=self.R[i])
                 self.drones.append(drone)

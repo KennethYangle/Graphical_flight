@@ -15,7 +15,7 @@ data = [[92.5, 90, 90, 92.5, 95, 97.5, 95, 92.5, 97.5, 90],
 labels = [0.5, 0.8, 1, 1.25, 2]
 ax2x = [1, 2, 3, 4, 5]
 ave = [np.average(a) for a in data]
-print(ave)
+# print(ave)
 
 fig = plt.figure()
 ax = fig.add_subplot(111)

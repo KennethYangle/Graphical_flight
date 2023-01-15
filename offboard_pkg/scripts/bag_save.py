@@ -94,11 +94,12 @@ if __name__=="__main__":
     rospy.init_node("bag_save_node")
 
     mav_num = rospy.get_param('mav_num', 10)
-    dds_topicL = ["/vicon/AA_rfly_{:01d}/pose".format(i) for i in range(10)]
-
+    dds_topicL = ["/vicon/AA_rfly_{:01d}/pose".format(i+1) for i in range(10)]
     dds_topic = " ".join(dds_topicL)
+    circle_topicL = ["/vicon/AA_circle_{:01d}/pose".format(i+1) for i in range(5)]
+    circle_topic = " ".join(circle_topicL)
 
-    save_topic = "{} {} {} {} {}".format(d435i_topic,mavros_topic,ctrl_topic,debug_topic,dds_topic)
+    save_topic = "{} {} {} {} {} {}".format(d435i_topic,mavros_topic,ctrl_topic,debug_topic,dds_topic,circle_topic)
 
     rosbag_cmd = "rosbag record {}".format(save_topic)
     

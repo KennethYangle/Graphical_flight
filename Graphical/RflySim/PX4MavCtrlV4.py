@@ -66,7 +66,7 @@ class PX4MavCtrler:
         self.isInOffboard = False
         self.isArmed = False
         self.hasSendDisableRTLRC = False
-        print("Thread Started!")
+        # print("Thread Started!")
 
     # Initialize MAVLink listen loop from CopterSim
     def InitMavLoop(self):
@@ -246,14 +246,14 @@ class PX4MavCtrler:
                 controls[i]=ctrls[i]
         buf = self.mav0.hil_actuator_controls_encode(int(time.time()*1000000),controls,1,1).pack(self.mav0)
         self.udp_socket.sendto(buf, (self.ip, self.port))
-        print("Msg Send.")
+        # print("Msg Send.")
 
     # send debug_vect message to Pixhawk to update rfly_ctrl uORB message
     def SendHILCtrlMsg1(self):
         name = b'hello'
         buf = self.mav0.debug_vect_encode(name, int(time.time()*1000000), 1100, 1500, 1700).pack(self.mav0)
         self.udp_socket.sendto(buf, (self.ip, self.port))
-        print("Msg1 Send.")
+        # print("Msg1 Send.")
 
     # send MAVLink command to Pixhawk to Arm/Disarm the drone
     def SendMavArm(self, isArm):
@@ -325,13 +325,13 @@ class PX4MavCtrler:
                     if msg.get_type() == "HEARTBEAT":
                         isArmed = msg.base_mode & mavlink2.MAV_MODE_FLAG_SAFETY_ARMED
                         if not self.isArmed and isArmed:
-                            print("PX4 Armed!")
+                            # print("PX4 Armed!")
                         if self.isArmed and not isArmed:
-                            print("PX4 DisArmed!")
+                            # print("PX4 DisArmed!")
                         self.isArmed = isArmed
                 else:
                     break
-        print("Mavlink Stoped.")
+        # print("Mavlink Stoped.")
 
     # Offboard message sending loop, 100Hz
     def OffboardSendMode(self):
@@ -347,4 +347,4 @@ class PX4MavCtrler:
                 self.lastTime2 = time.time()
             if self.isInOffboard:
                 self.sendMavOffboardAPI(self.EnList, self.coordinate_frame, self.pos, self.vel, self.acc, self.yaw, self.yawrate)
-        print("Offboard Stoped.")
+        # print("Offboard Stoped.")

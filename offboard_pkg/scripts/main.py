@@ -46,7 +46,7 @@ if __name__=="__main__":
     
     # px4_control = Px4Controller(pos_swarm_init=pos_swarm_init)
     px4_control = Px4Controller()
-    target_allocater = Allocation()
+    target_allocater = Allocation(mav_id)
 
 
 

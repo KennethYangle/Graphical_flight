@@ -43,8 +43,8 @@ sleep 5s
 gnome-terminal -x bash -c "source ${WS_DIR}/devel/setup.bash;roslaunch offboard_pkg bs_vicon.launch mav_id:=${mav_id};exec bash"
 sleep 5s
 
-gnome-terminal -x bash -c "source ${WS_DIR}/devel/setup.bash;roslaunch offboard_pkg bs_d435i_30hz.launch;exec bash"
-sleep 5s
+# gnome-terminal -x bash -c "source ${WS_DIR}/devel/setup.bash;roslaunch offboard_pkg bs_d435i_30hz.launch;exec bash"
+# sleep 5s
 
 
 gnome-terminal --window -x bash -c "source ${WS_DIR}/devel/setup.bash;roslaunch offboard_pkg bs_main.launch mav_id:=${mav_id} mav_num:=${mav_num};exec bash"

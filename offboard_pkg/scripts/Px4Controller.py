@@ -415,22 +415,23 @@ class Px4Controller:
     
 
     # 移动至Swarm系下的位置，只控制x和y
-    def moveBySwarmPosEN(self, x, y, vel=0.5):
+    def moveBySwarmPosENU(self, x, y, z, vel=0.5):
         print("start moveBySwarmPosEN x:{:.2f} y:{:.2f}".format(x,y))
         self.controller_swith(ctrl_type="vel")
-        tag_pos = np.array([x,y,0])
+        tag_pos = np.array([x,y,z])
 
-        tgt_arrow = tag_pos - self.pos_swarm
+        # tgt_arrow = tag_pos - self.pos_swarm
+        tgt_arrow = tag_pos - self.pos_enu
         
         
         
-        while np.linalg.norm(tgt_arrow[:2]) > 0.5:
+        while np.linalg.norm(tgt_arrow) > 0.5:
             # tgt_arrow = tag_pos - self.pos_swarm
             tgt_arrow = tag_pos - self.pos_enu
             # 转换到世界系
             tag_vel_xy_enu = np.dot(self.R_eo,tgt_arrow)
-            tag_vel_xy = tag_vel_xy_enu[:2]/np.linalg.norm(tag_vel_xy_enu[:2])*vel
-            self.command_vel = construct_vel_target(tag_vel_xy[0], tag_vel_xy[1], frame="ENU")
+            tag_vel_xy = tag_vel_xy_enu/np.linalg.norm(tag_vel_xy_enu)*vel
+            self.command_vel = construct_vel_target(tag_vel_xy[0], tag_vel_xy[1], tag_vel_xy[2], frame="ENU")
 
 
 
@@ -438,9 +439,9 @@ class Px4Controller:
             # print("pos_enu: {}".format(self.pos_enu))
             # print("pos_odom: {}".format(self.pos_odom))
             # print("pos_swarm: {}".format(self.pos_swarm))
-            print("cnt_xy:[{:.2f} {:.2f}] norm:{:.3f}".format(self.pos_enu[0],self.pos_enu[1],np.linalg.norm(tgt_arrow[:2])))
+            print("pos_enu:[{:.2f} {:.2f} {:.2f}] norm:{:.3f}".format(self.pos_enu[0],self.pos_enu[1],self.pos_enu[2],np.linalg.norm(tgt_arrow)))
 
-            time.sleep(0.1)
+            time.sleep(0.02)
         
         self.command_vel = construct_vel_target()
         print("moveBySwarmPosEN end")

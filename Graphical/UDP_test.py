@@ -27,6 +27,6 @@ while True:
     # 接收结果
     data, addr = sock.recvfrom(1024)
     res = json.loads(data.decode())
-    print(res["p_next"])
+    # print(res["p_next"])
 
     time.sleep(1)

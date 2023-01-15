@@ -12,7 +12,7 @@ labels = [10, 20, 30, 40, 50]
 ax2x = [1, 2, 3, 4, 5]
 ratios = [1101/1344*100, 2524/3055*100, 3928/4455*100, 5042/5464*100, 5924/6910*100]
 ave = [np.average(a) for a in data]
-print(ave)
+# print(ave)
 
 fig = plt.figure()
 ax = fig.add_subplot(111)

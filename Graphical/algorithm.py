@@ -75,12 +75,12 @@ class Algorithm:
             for j in range(W.num):
                 if W.G[i][j] == 1:
                     W.units[i].NWL.append({"id":j})
-            print("NeighborWL {}: {}".format(i, W.units[i].NWL))
+            # print("NeighborWL {}: {}".format(i, W.units[i].NWL))
 
         # calc NTLs in uniti
         self.direction = T.center - W.center
         self.direction /= np.linalg.norm(self.direction)
-        print("direction: {}".format(self.direction))
+        # print("direction: {}".format(self.direction))
         for i in range(W.num):
             for j in range(T.num):
                 di = T.units[j].position - W.units[i].position
@@ -90,34 +90,34 @@ class Algorithm:
                 #     W.units[i].NTL.append({"id":j})
                 W.units[i].NTL_central.append({"id":j})
                 W.units[i].NTL.append({"id":j})
-            print("NeighborTL_central {}: {}".format(i, W.units[i].NTL_central))
-            print("NeighborTL {}: {}".format(i, W.units[i].NTL))
+            # print("NeighborTL_central {}: {}".format(i, W.units[i].NTL_central))
+            # print("NeighborTL {}: {}".format(i, W.units[i].NTL))
 
     def CalcPayoff(self, T, W, M):
         self.M = M
         for i in range(W.num):
             for t in W.units[i].NTL:
                 t["payoff"] = self.M - np.linalg.norm(W.units[i].position - T.units[t["id"]].position)
-            print("NeighborTL {}: {}".format(i, W.units[i].NTL))
+            # print("NeighborTL {}: {}".format(i, W.units[i].NTL))
 
     def Hungarian(self, T, W):
         self.hungarian_result = list()
         from scipy.optimize import linear_sum_assignment
         payoffmat = np.zeros((T.num, W.num))
-        print("shape:", payoffmat.shape)
+        # print("shape:", payoffmat.shape)
         for i in range(W.num):
             for j in range(T.num):
                 payoffmat[i][j] = self.M - np.linalg.norm(W.units[i].position - T.units[j].position)
         cost = -payoffmat
         row_ind, col_ind = linear_sum_assignment(cost)
-        # print("Hungarian result: {}".format(col_ind))
+        # # print("Hungarian result: {}".format(col_ind))
 
         for i in range(len(col_ind)):
             self.hungarian_result.append([T.units[row_ind[i]], W.units[col_ind[i]]])
 
         GlobalPayoff = -cost[row_ind, col_ind].sum()
-        print("GlobalPayoff: {}".format(GlobalPayoff))
-        print()
+        # print("GlobalPayoff: {}".format(GlobalPayoff))
+        # print()
 
     def CalcCE(self, u, W):
         per = permutations([i for i in range(len(u.NTL_central))], len(u.NWL))  # p[i] means u.NWL[i]["id"] choose u.NTL_central[p[i]]
@@ -127,12 +127,12 @@ class Algorithm:
             ulocal = 0
             for i, v in enumerate(p):
                 # find payoff
-                # print(W.units[u.NWL[i]["id"]].NTL)
+                # # print(W.units[u.NWL[i]["id"]].NTL)
                 for tl in W.units[u.NWL[i]["id"]].NTL:
                     if tl["id"] == u.NTL_central[v]["id"]:
                         ulocal += tl["payoff"]
                         break
-            # print("unit {}: p: {}, ulocal: {}".format(u.id, p, ulocal))
+            # # print("unit {}: p: {}, ulocal: {}".format(u.id, p, ulocal))
             if ulocal > maxv:
                 maxv = ulocal
                 maxp = p
@@ -142,7 +142,7 @@ class Algorithm:
                 idx = i
 
         if maxp is not None:
-            print("unit {} choose task {}".format(u.id, maxp[idx]))
+            # print("unit {} choose task {}".format(u.id, maxp[idx]))
 
             return maxp[idx]
 
@@ -151,20 +151,20 @@ class Algorithm:
         for c in r.children:
             nodes.append(c)
         tasks = [a["id"] for a in r.val.NTL_central]
-        print("before", r.val.id, tasks)
-        print("parent_select", r.parent_select)
+        # print("before", r.val.id, tasks)
+        # print("parent_select", r.parent_select)
         for sel in r.parent_select:
             if sel in tasks:
                 tasks.remove(sel)
-        print("after", r.val.id, tasks)
+        # print("after", r.val.id, tasks)
         # extend field of view
-        # print("len_tasks: {}, len_nodes: {}".format(len(tasks), len(nodes)))
+        # # print("len_tasks: {}, len_nodes: {}".format(len(tasks), len(nodes)))
         if len(tasks) < len(nodes):
             tasks = [a["id"] for a in r.val.NTL]
             for sel in r.parent_select:
                 if sel in tasks:
                     tasks.remove(sel)
-            print("after-after", r.val.id, tasks)
+            # print("after-after", r.val.id, tasks)
 
         per = permutations([i for i in range(len(tasks))], len(nodes))  # p[i] means u.NWL[i]["id"] choose u.NTL_central[p[i]]
         maxv = -1e10
@@ -173,7 +173,7 @@ class Algorithm:
             ulocal = 0
             for i, v in enumerate(p):
                 # find payoff
-                # print(W.units[u.NWL[i]["id"]].NTL)
+                # # print(W.units[u.NWL[i]["id"]].NTL)
                 is_found = False
                 for w in W.units:
                     if w.id == nodes[i].val.id:
@@ -184,18 +184,18 @@ class Algorithm:
                                 break
                         if is_found:
                             break
-            # print("unit {}: p: {}, ulocal: {}".format(u.id, p, ulocal))
+            # # print("unit {}: p: {}, ulocal: {}".format(u.id, p, ulocal))
             if ulocal > maxv:
                 maxv = ulocal
                 maxp = p
 
         if maxp is not None:
-            print("unit {} choose task {}".format(r.val.id, tasks[maxp[0]]))
+            # print("unit {} choose task {}".format(r.val.id, tasks[maxp[0]]))
             return True, tasks[maxp[0]]
         else:
             maxc, maxi = 0, 0
             for i, a in enumerate(r.val.NTL):
-                # print(a)
+                # # print(a)
                 if a["payoff"] > maxc:
                     maxc = a["payoff"]
                     maxi = i
@@ -206,11 +206,11 @@ class Algorithm:
         for i in range(W.num):
             W.units[i].cohesion = np.linalg.norm(W.units[i].position - W.center)
         W.units.sort(key=lambda x: (x.cohesion))
-        print(W)
+        # print(W)
 
         # # Direct allocation
         # self.direct_result = list()
-        # print("<-- direct allocation -->")
+        # # print("<-- direct allocation -->")
         # for i in range(W.num):
         #     u_select = self.CalcCE(W.units[i], W)
         #     if u_select is not None:
@@ -237,8 +237,8 @@ class Algorithm:
                     open_table.append(c)
                     cnt += 1
                     if cnt >= self.max_tree_width: break
-                    print("node {} got unit {}".format(r.val.id, tmpid))
-            print(r.val.id, [c.val.id for c in r.children])
+                    # print("node {} got unit {}".format(r.val.id, tmpid))
+            # print(r.val.id, [c.val.id for c in r.children])
 
         # View Tree Struct
         self.tree = root
@@ -246,11 +246,11 @@ class Algorithm:
         stash.append(root)
         while len(stash) != 0:
             r = stash.popleft()
-            print("node {}:".format(r.val.id))
+            # print("node {}:".format(r.val.id))
             for c in r.children:
                 stash.append(c)
-                print(c.val.id)
-            print()
+                # print(c.val.id)
+            # print()
 
         # Solve Tree
         Coverage = 0
@@ -280,8 +280,8 @@ class Algorithm:
                 c.parent_select = previous_select           # reference
                 # c.parent_select = previous_select.copy()    # shallow copy
                 stash.append(c)
-        print()
-        print("Coverage: {}\nGlobalPayoff: {}".format(Coverage, GlobalPayoff))
+        # print()
+        # print("Coverage: {}\nGlobalPayoff: {}".format(Coverage, GlobalPayoff))
 
     def Reallocation(self, T, W):
         self.reallocation = [[T.units[40], T.units[44]],

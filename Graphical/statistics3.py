@@ -19,7 +19,7 @@ data = [[88, 88, 86, 88, 90, 92, 96, 92, 84, 92],
 labels = [1, 2, 3, 4, 5]
 ax2x = [1, 2, 3, 4, 5]
 ave = [np.average(a) for a in data]
-print(ave)
+# print(ave)
 
 fig = plt.figure()
 ax = fig.add_subplot(111)

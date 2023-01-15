@@ -3,7 +3,7 @@ random_seed = 367528110
 if random_seed < 0:
     random_seed = np.random.randint(1<<32-1)
 np.random.seed(random_seed)
-print("random_seed: {}".format(random_seed))
+# print("random_seed: {}".format(random_seed))
 
 from swarms import Drone, Swarm, Unit, List
 from algorithm import Algorithm
@@ -22,20 +22,20 @@ def useGTA(Pcur, ViewR, p_search):
     IS = Swarm(N, camp="Interceptor", swarm_pos=Pcur, R=ViewR)
     m = np.size(p_search, 0)
     HS = Swarm(m, camp="Hostile", swarm_pos=p_search, R=ViewR)
-    print(IS)
-    print(HS)
+    # print(IS)
+    # print(HS)
     algs = Algorithm()
     TL, WL = algs.ConstructList(HS, IS)
-    print(TL)
-    print(WL)
+    # print(TL)
+    # print(WL)
     G = WL.ConstructGraph()
-    print(G)
+    # print(G)
     algs.GetNeighborhood(TL, WL)
     algs.CalcPayoff(TL, WL, M=500)
     algs.Hungarian(TL, WL)
     p_next = [0 for i in range(N)]
     for r in algs.hungarian_result:
-        print(r[1].id, r[0].id)
+        # print(r[1].id, r[0].id)
         p_next[r[1].id] = TL.units[r[0].id].parent_id
     return np.array(p_next)
 
@@ -63,15 +63,15 @@ if __name__ == "__main__":
                 break
             m += 1
         p_search = data_p_search[:m,:]
-        print("Pcur:", Pcur)
-        print("p_search", p_search)
+        # print("Pcur:", Pcur)
+        # print("p_search", p_search)
 
         N = max(N, m)
         ViewR = np.array([1000 for i in range(N)])
 
         # 处理数据
         p_next = useGTA(Pcur, ViewR, p_search)
-        print("p_next:", p_next)
+        # print("p_next:", p_next)
 
         # 发送结果
         p_next_zeros = np.zeros(100)

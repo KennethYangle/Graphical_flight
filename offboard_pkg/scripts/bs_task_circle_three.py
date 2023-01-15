@@ -3,6 +3,7 @@
 
 import rospy
 from std_msgs.msg import String
+from geometry_msgs.msg import Point
 
 import io
 import os
@@ -13,7 +14,7 @@ import json5
 
 from rgbd_proc import rgbd_img_proc
 from visual_servo_bs import visual_servo_bs
-
+from Px4Controller import construct_vel_target
 
 from utils import constrain_rad
 
@@ -63,14 +64,19 @@ class TaskCircleThree:
     def __init__(self,px4_control,target_allocater):
         self.px4_control = px4_control
         self.target_allocater = target_allocater
+        self.tgt_circle_pos = np.array([0., 0., 0.])
 
+        self.target_pos_sub = rospy.Subscriber('/allocation/target_pos', Point, self.target_pos_callback)
+
+    def target_pos_callback(self, msg):
+        self.tgt_circle_pos = np.array([msg.x, msg.y, msg.z])
     
     def run(self):
         px4_control = self.px4_control
         target_allocater = self.target_allocater
 
 
-        img_proc = rgbd_img_proc()
+        # img_proc = rgbd_img_proc()
         visual_servo = visual_servo_bs()
 
         debuger = Debuger()
@@ -89,57 +95,81 @@ class TaskCircleThree:
 
 
         tgt_circle_pos_idx = -1
-        tgt_circle_pos = [0]*3
 
+
+        vel = 0.5
         while True:
+            print("tgt_circle_pos: {}".format(self.tgt_circle_pos))
+            dlt_pos = self.tgt_circle_pos - target_allocater.Pcur[mav_id-1]
+            dlt_pos_yz = np.array([0, dlt_pos[1], dlt_pos[2]])
 
-            yaw = px4_control.mav_yaw_odom
-            R_be = px4_control.R_be
-            pos_swarm = px4_control.pos_swarm
-
-            img_proc.update_ring_info()
-
-
-            if task_state == TASK_ALLOCATION:
-                # tgt_taskL = target_allocater.allocate(circle_posL)
-                # tgt_circle_pos_idx = tgt_taskL[mav_id-1]
-                # tgt_circle_pos = circle_posL[tgt_circle_pos_idx]
-                # print("tgt_taskL: {}".format(tgt_taskL))
-                # print("tgt_circle_pos_idx: {}".format(tgt_circle_pos_idx))
-                tgt_circle_pos = target_allocater.allocate_yk(circle_posL, mav_id)
-                print("tgt_circle_pos: {}".format(tgt_circle_pos))
-                task_state = TASK_SWARM_POS
-            elif task_state == TASK_SWARM_POS:
-                px4_control.moveBySwarmPosEN(x=target_allocater.Pcur[mav_id-1][0], y=tgt_circle_pos[1])
-                task_state = TASK_ACCESS
-            elif task_state == TASK_ACCESS:
-                # px4_control.moveByVelocityYawrateBodyFrame(vx=0.5)
-                px4_control.moveByVelocityYawrateENU(vx=0.5)
-                if visual_servo.switch_to(img_proc.circle_xyr[2]):
-                    task_state = TASK_VISUAL
-                    print("visual servo start")
-            elif task_state == TASK_VISUAL:
-                visual_servo.update_kinematics(R_be,yaw)
-                v_cmd, yaw_rate_cmd = visual_servo.visual_servo_real_update(img_proc.circle_xyr,img_proc.circle_FRD,tgt_yaw)
-                
-                px4_control.moveByVelocityYawrateBodyFrame(v_cmd[0],v_cmd[1],v_cmd[2],0)
-                # px4_control.moveByVelocityYawrateENU(v_cmd[0],v_cmd[1],v_cmd[2],yaw_rate_cmd)
-                if visual_servo.next_task_flag:
-                    break
-            debug_info_dict = {
-                "task_state": (
-                    "s:{} vs:{}\n".format(task_state,visual_servo.vs_state) +
-                    "yolo_xyr:{:.2f} {:.2f} {:.2f}\n".format(img_proc.circle_xyr[0],img_proc.circle_xyr[1],img_proc.circle_xyr[2],) +
-                    "yolo_frd:{:.2f} {:.2f} {:.2f}\n".format(img_proc.circle_FRD[0],img_proc.circle_FRD[1],img_proc.circle_FRD[2],) +
-                    "pos_swarm:{:.2f} {:.2f} {:.2f}\n".format(pos_swarm[0],pos_swarm[1],pos_swarm[2])
-                ),
-                "yolo_px"   : "yolo_px:{:.2f} {:.2f} {:.2f}".format(img_proc.circle_xyr[0],img_proc.circle_xyr[1],img_proc.circle_xyr[2]),
-                "yolo_frd"  : "yolo_frd:{:.2f} {:.2f} {:.2f}".format(img_proc.circle_FRD[0],img_proc.circle_FRD[1],img_proc.circle_FRD[2]),
-                "cmdv_flu"  : "v_flu:{:.2f} {:.2f} {:.2f}".format(v_cmd[0],v_cmd[1],v_cmd[2]),
-                "allocation"  : "tgt_circle_pos_idx:{} tgt_circle_pos:{}".format(tgt_circle_pos_idx,tgt_circle_pos),
-            }
-            debuger.update(debug_info_dict)
+            if np.linalg.norm(dlt_pos_yz) > 0.6:
+                # px4_control.moveBySwarmPosENU(x=target_allocater.Pcur[mav_id-1][0], y=self.tgt_circle_pos[1], z=self.tgt_circle_pos[1])
+                tag_vel_yz = dlt_pos_yz/np.linalg.norm(dlt_pos_yz)*vel
+                px4_control.command_vel = construct_vel_target(tag_vel_yz[0], tag_vel_yz[1], tag_vel_yz[2], frame="ENU")
+            else:
+                # px4_control.moveBySwarmPosENU(x=self.tgt_circle_pos[0]+0.2, y=self.tgt_circle_pos[1], z=self.tgt_circle_pos[1])
+                tag_vel_xyz = dlt_pos/np.linalg.norm(dlt_pos)*vel
+                px4_control.command_vel = construct_vel_target(tag_vel_xyz[0], tag_vel_xyz[1], tag_vel_xyz[2], frame="ENU")
+            
+            if np.linalg.norm(dlt_pos) < 0.3:
+                for i in range(30):
+                    px4_control.moveByVelocityYawrateENU(vx=0.5)
+                    time.sleep(0.1)
+                break
             time.sleep(0.01)
+
+
+
+        # while True:
+
+        #     yaw = px4_control.mav_yaw_odom
+        #     R_be = px4_control.R_be
+        #     pos_swarm = px4_control.pos_swarm
+
+        #     img_proc.update_ring_info()
+
+
+        #     if task_state == TASK_ALLOCATION:
+        #         # tgt_taskL = target_allocater.allocate(circle_posL)
+        #         # tgt_circle_pos_idx = tgt_taskL[mav_id-1]
+        #         # tgt_circle_pos = circle_posL[tgt_circle_pos_idx]
+        #         # print("tgt_taskL: {}".format(tgt_taskL))
+        #         # print("tgt_circle_pos_idx: {}".format(tgt_circle_pos_idx))
+        #         tgt_circle_pos = target_allocater.allocate_yk()
+        #         print("tgt_circle_pos: {}".format(tgt_circle_pos))
+        #         task_state = TASK_SWARM_POS
+        #     elif task_state == TASK_SWARM_POS:
+        #         px4_control.moveBySwarmPosENU(x=target_allocater.Pcur[mav_id-1][0], y=tgt_circle_pos[1])
+        #         task_state = TASK_ACCESS
+        #     elif task_state == TASK_ACCESS:
+        #         # px4_control.moveByVelocityYawrateBodyFrame(vx=0.5)
+        #         px4_control.moveByVelocityYawrateENU(vx=0.5)
+        #         if visual_servo.switch_to(img_proc.circle_xyr[2]):
+        #             task_state = TASK_VISUAL
+        #             print("visual servo start")
+        #     elif task_state == TASK_VISUAL:
+        #         visual_servo.update_kinematics(R_be,yaw)
+        #         v_cmd, yaw_rate_cmd = visual_servo.visual_servo_real_update(img_proc.circle_xyr,img_proc.circle_FRD,tgt_yaw)
+                
+        #         px4_control.moveByVelocityYawrateBodyFrame(v_cmd[0],v_cmd[1],v_cmd[2],0)
+        #         # px4_control.moveByVelocityYawrateENU(v_cmd[0],v_cmd[1],v_cmd[2],yaw_rate_cmd)
+        #         if visual_servo.next_task_flag:
+        #             break
+        #     debug_info_dict = {
+        #         "task_state": (
+        #             "s:{} vs:{}\n".format(task_state,visual_servo.vs_state) +
+        #             "yolo_xyr:{:.2f} {:.2f} {:.2f}\n".format(img_proc.circle_xyr[0],img_proc.circle_xyr[1],img_proc.circle_xyr[2],) +
+        #             "yolo_frd:{:.2f} {:.2f} {:.2f}\n".format(img_proc.circle_FRD[0],img_proc.circle_FRD[1],img_proc.circle_FRD[2],) +
+        #             "pos_swarm:{:.2f} {:.2f} {:.2f}\n".format(pos_swarm[0],pos_swarm[1],pos_swarm[2])
+        #         ),
+        #         "yolo_px"   : "yolo_px:{:.2f} {:.2f} {:.2f}".format(img_proc.circle_xyr[0],img_proc.circle_xyr[1],img_proc.circle_xyr[2]),
+        #         "yolo_frd"  : "yolo_frd:{:.2f} {:.2f} {:.2f}".format(img_proc.circle_FRD[0],img_proc.circle_FRD[1],img_proc.circle_FRD[2]),
+        #         "cmdv_flu"  : "v_flu:{:.2f} {:.2f} {:.2f}".format(v_cmd[0],v_cmd[1],v_cmd[2]),
+        #         "allocation"  : "tgt_circle_pos_idx:{} tgt_circle_pos:{}".format(tgt_circle_pos_idx,tgt_circle_pos),
+        #     }
+        #     debuger.update(debug_info_dict)
+        #     time.sleep(0.01)
 
 
 
