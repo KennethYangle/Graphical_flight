@@ -34,6 +34,10 @@ class Allocation:
         circle_num = 5
         self.mav_id = mav_id
         self.mav_posL = np.zeros((self.mav_num,2))
+
+        self.last_mav_num = 0
+        self.last_circle_num = 0
+
         self.circle_posL = np.zeros((self.mav_num,2))
         self.Pcur = np.zeros((self.mav_num,3))
         self.p_search = np.zeros((self.mav_num,3))
@@ -87,18 +91,26 @@ class Allocation:
 
         Pcur = self.Pcur[[not np.all(self.Pcur[i]==0) for i in range(self.Pcur.shape[0])], :]
         p_search = self.p_search[[not np.all(self.p_search[i]==0) for i in range(self.p_search.shape[0])], :]
-        print("Pcur:", Pcur)
-        print("p_search:", p_search)
-        N = max(np.size(Pcur, 0), np.size(p_search, 0))
-        ViewR = np.array([4000 for i in range(N)])
-        p_next = useGTA(Pcur, ViewR, p_search)
-        print("p_next:", p_next)
 
-        target_pos = Point()
-        target_pos.x = p_next[self.mav_id-1-cnt_zero_line][0]
-        target_pos.y = p_next[self.mav_id-1-cnt_zero_line][1]
-        target_pos.z = p_next[self.mav_id-1-cnt_zero_line][2]
-        self.target_pos_pub.publish(target_pos)
+        this_mav_num = np.size(Pcur, 0)
+        this_circle_num = np.size(p_search, 0)
+        # event-trigger, only re-allocate when the number of mavs or targets changed.
+        if (this_mav_num != self.last_mav_num) or (this_circle_num != self.last_circle_num):
+            print("Pcur:", Pcur)
+            print("p_search:", p_search)
+            N = max(this_mav_num, this_circle_num)
+            ViewR = np.array([4000 for i in range(N)])
+            p_next = useGTA(Pcur, ViewR, p_search)
+            print("p_next:", p_next)
+
+            target_pos = Point()
+            target_pos.x = p_next[self.mav_id-1-cnt_zero_line][0]
+            target_pos.y = p_next[self.mav_id-1-cnt_zero_line][1]
+            target_pos.z = p_next[self.mav_id-1-cnt_zero_line][2]
+            self.target_pos_pub.publish(target_pos)
 
         self.Pcur = np.zeros((self.mav_num,3))
         self.p_search = np.zeros((self.mav_num,3))
+
+        self.last_mav_num = this_mav_num
+        self.last_circle_num = this_circle_num
