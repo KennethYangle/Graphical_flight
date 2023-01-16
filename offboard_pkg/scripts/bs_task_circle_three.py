@@ -114,7 +114,7 @@ class TaskCircleThree:
             
             if np.linalg.norm(dlt_pos) < 0.3:
                 for i in range(30):
-                    px4_control.moveByVelocityYawrateENU(vx=0.5)
+                    px4_control.moveByVelocityYawrateENU(vx=-0.5)
                     time.sleep(0.1)
                 break
             time.sleep(0.01)
