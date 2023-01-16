@@ -30,16 +30,16 @@ from main_ly import useGTA
 
 class Allocation:
     def __init__(self, mav_id):
-        mav_num = rospy.get_param('mav_num', 10)
+        self.mav_num = rospy.get_param('mav_num', 10)
         circle_num = 5
         self.mav_id = mav_id
-        self.mav_posL = np.zeros((mav_num,2))
-        self.circle_posL = np.zeros((mav_num,2))
-        self.Pcur = np.zeros((mav_num,3))
-        self.p_search = np.zeros((mav_num,3))
+        self.mav_posL = np.zeros((self.mav_num,2))
+        self.circle_posL = np.zeros((self.mav_num,2))
+        self.Pcur = np.zeros((self.mav_num,3))
+        self.p_search = np.zeros((self.mav_num,3))
         self.ros_subL = [
             rospy.Subscriber("/vicon/AA_rfly_{:01d}/pose".format(i+1), PoseStamped, self.mav_pos_callback,(i,))
-            for i in range(mav_num)    
+            for i in range(self.mav_num)    
         ]
         self.ros_circle_subL = [
             rospy.Subscriber("/vicon/AA_circle_{:01d}/pose".format(i+1), PoseStamped, self.circle_pos_callback,(i,))
@@ -99,3 +99,6 @@ class Allocation:
         target_pos.y = p_next[self.mav_id-1-cnt_zero_line][1]
         target_pos.z = p_next[self.mav_id-1-cnt_zero_line][2]
         self.target_pos_pub.publish(target_pos)
+
+        self.Pcur = np.zeros((self.mav_num,3))
+        self.p_search = np.zeros((self.mav_num,3))
