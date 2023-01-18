@@ -65,11 +65,13 @@ class TaskCircleThree:
         self.px4_control = px4_control
         self.target_allocater = target_allocater
         self.tgt_circle_pos = np.array([0., 0., 0.])
+        self.tgt_circle_pos_idx = 0
 
         self.target_pos_sub = rospy.Subscriber('/allocation/target_pos', Point, self.target_pos_callback)
 
     def target_pos_callback(self, msg):
-        self.tgt_circle_pos = np.array([msg.x, msg.y, msg.z])
+        # self.tgt_circle_pos = np.array([msg.x, msg.y, msg.z])
+        self.tgt_circle_pos_idx = int(msg.x)
     
     def run(self):
         px4_control = self.px4_control
@@ -87,37 +89,46 @@ class TaskCircleThree:
 
         print("TaskCircleThree mav_id:{}".format(mav_id))
         
-
         v_cmd = [0]*3
         tgt_yaw = 0
         visual_servo.reset()
         visual_servo.__dict__.update(vs_dict)
 
-
-        tgt_circle_pos_idx = -1
-
-
         vel = 0.5
         while True:
+            print("self.tgt_circle_pos_idx:", self.tgt_circle_pos_idx)
+            self.tgt_circle_pos = target_allocater.p_search[self.tgt_circle_pos_idx]
             print("tgt_circle_pos: {}".format(self.tgt_circle_pos))
+
+            if np.all(target_allocater.Pcur[mav_id-1]==0) and np.all(self.tgt_circle_pos==0):
+                time.sleep(0.02)
+                continue
+
+            self.tgt_circle_pos[0] -= 1
             dlt_pos = self.tgt_circle_pos - target_allocater.Pcur[mav_id-1]
             dlt_pos_yz = np.array([0, dlt_pos[1], dlt_pos[2]])
 
-            if np.linalg.norm(dlt_pos_yz) > 0.6:
-                # px4_control.moveBySwarmPosENU(x=target_allocater.Pcur[mav_id-1][0], y=self.tgt_circle_pos[1], z=self.tgt_circle_pos[1])
-                tag_vel_yz = dlt_pos_yz/np.linalg.norm(dlt_pos_yz)*vel
-                px4_control.command_vel = construct_vel_target(tag_vel_yz[0], tag_vel_yz[1], tag_vel_yz[2], frame="ENU")
-            else:
-                # px4_control.moveBySwarmPosENU(x=self.tgt_circle_pos[0]+0.2, y=self.tgt_circle_pos[1], z=self.tgt_circle_pos[1])
-                tag_vel_xyz = dlt_pos/np.linalg.norm(dlt_pos)*vel
-                px4_control.command_vel = construct_vel_target(tag_vel_xyz[0], tag_vel_xyz[1], tag_vel_xyz[2], frame="ENU")
+            # if np.linalg.norm(dlt_pos_yz) > 0.6:
+            #     # px4_control.moveBySwarmPosENU(x=target_allocater.Pcur[mav_id-1][0], y=self.tgt_circle_pos[1], z=self.tgt_circle_pos[1])
+            #     tag_vel_yz = dlt_pos_yz/np.linalg.norm(dlt_pos_yz)*vel
+            #     px4_control.command_vel = construct_vel_target(tag_vel_yz[0], tag_vel_yz[1], tag_vel_yz[2], frame="ENU")
+            # else:
+            #     # px4_control.moveBySwarmPosENU(x=self.tgt_circle_pos[0]+0.2, y=self.tgt_circle_pos[1], z=self.tgt_circle_pos[1])
+            #     tag_vel_yz = dlt_pos_yz/np.linalg.norm(dlt_pos_yz)*vel
+            #     tag_vel_xyz = dlt_pos/np.linalg.norm(dlt_pos)*vel
+            #     px4_control.command_vel = construct_vel_target(tag_vel_yz[0], tag_vel_yz[1], tag_vel_xyz[2], frame="ENU")
+            
+            tag_vel_yz = dlt_pos_yz * 3.0
+            tag_vel_xyz = dlt_pos/np.linalg.norm(dlt_pos)*vel
+            px4_control.command_vel = construct_vel_target(tag_vel_xyz[0], tag_vel_yz[1], tag_vel_yz[2], frame="ENU")
             
             if np.linalg.norm(dlt_pos) < 0.3:
-                for i in range(30):
+                for i in range(10):
                     px4_control.moveByVelocityYawrateENU(vx=-0.5)
                     time.sleep(0.1)
+                    print("Through")
                 break
-            time.sleep(0.01)
+            time.sleep(0.02)
 
 
 

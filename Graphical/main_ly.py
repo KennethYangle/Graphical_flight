@@ -32,7 +32,7 @@ def useGTA(Pcur, ViewR, p_search):
 
     p_next = [0 for i in range(N)]
     for r in algs.tree_result:
-        p_next[r[0].parent_id] = HS.drones[r[1].parent_id].position
+        p_next[r[0].parent_id] = HS.drones[r[1].parent_id].id
     return np.array(p_next)
 
 

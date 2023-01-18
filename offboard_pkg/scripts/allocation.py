@@ -104,9 +104,10 @@ class Allocation:
             print("p_next:", p_next)
 
             target_pos = Point()
-            target_pos.x = p_next[self.mav_id-1-cnt_zero_line][0]
-            target_pos.y = p_next[self.mav_id-1-cnt_zero_line][1]
-            target_pos.z = p_next[self.mav_id-1-cnt_zero_line][2]
+            # target_pos.x = p_next[self.mav_id-1-cnt_zero_line][0]
+            # target_pos.y = p_next[self.mav_id-1-cnt_zero_line][1]
+            # target_pos.z = p_next[self.mav_id-1-cnt_zero_line][2]
+            target_pos.x = p_next[self.mav_id-1-cnt_zero_line]
             self.target_pos_pub.publish(target_pos)
 
         self.Pcur = np.zeros((self.mav_num,3))
