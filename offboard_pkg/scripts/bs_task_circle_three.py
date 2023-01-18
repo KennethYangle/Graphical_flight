@@ -59,6 +59,12 @@ TASK_THROUGH    = 2
 TASK_ALLOCATION = 11
 TASK_SWARM_POS  = 12
 
+def sat(a, maxv):
+    n = np.linalg.norm(a)
+    if n > maxv:
+        return a / n * maxv
+    else:
+        return a
 
 class TaskCircleThree:
     def __init__(self,px4_control,target_allocater):
@@ -118,7 +124,7 @@ class TaskCircleThree:
             #     tag_vel_xyz = dlt_pos/np.linalg.norm(dlt_pos)*vel
             #     px4_control.command_vel = construct_vel_target(tag_vel_yz[0], tag_vel_yz[1], tag_vel_xyz[2], frame="ENU")
             
-            tag_vel_yz = dlt_pos_yz * 3.0
+            tag_vel_yz = sat(dlt_pos_yz * 3.0, 3.0)
             tag_vel_xyz = dlt_pos/np.linalg.norm(dlt_pos)*vel
             px4_control.command_vel = construct_vel_target(tag_vel_xyz[0], tag_vel_yz[1], tag_vel_yz[2], frame="ENU")
             

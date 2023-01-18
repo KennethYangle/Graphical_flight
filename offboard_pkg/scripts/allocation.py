@@ -84,10 +84,17 @@ class Allocation:
         return p_next[self.mav_id-1]
 
     def allocate_callback(self, event):
-        cnt_zero_line = 0
+        cnt_zero_line_of_Pcur = 0
+        cnt_zero_line_of_p_search = 0
         for i in range(self.mav_id-1):
             if np.all(self.Pcur[i]==0):
-                cnt_zero_line += 1
+                cnt_zero_line_of_Pcur += 1
+
+        local_to_self_p_search_dic = {}
+        for i in range(self.p_search.shape[0]):
+            local_to_self_p_search_dic[i-cnt_zero_line_of_p_search] = i
+            if np.all(self.p_search[i]==0):
+                cnt_zero_line_of_p_search += 1
 
         Pcur = self.Pcur[[not np.all(self.Pcur[i]==0) for i in range(self.Pcur.shape[0])], :]
         p_search = self.p_search[[not np.all(self.p_search[i]==0) for i in range(self.p_search.shape[0])], :]
@@ -103,12 +110,15 @@ class Allocation:
             p_next = useGTA(Pcur, ViewR, p_search)
             print("p_next:", p_next)
 
+            tgt_idx = local_to_self_p_search_dic[p_next[self.mav_id-1-cnt_zero_line_of_Pcur]]
+
             target_pos = Point()
-            # target_pos.x = p_next[self.mav_id-1-cnt_zero_line][0]
-            # target_pos.y = p_next[self.mav_id-1-cnt_zero_line][1]
-            # target_pos.z = p_next[self.mav_id-1-cnt_zero_line][2]
-            target_pos.x = p_next[self.mav_id-1-cnt_zero_line]
+            # target_pos.x = p_next[self.mav_id-1-cnt_zero_line_of_Pcur][0]
+            # target_pos.y = p_next[self.mav_id-1-cnt_zero_line_of_Pcur][1]
+            # target_pos.z = p_next[self.mav_id-1-cnt_zero_line_of_Pcur][2]
+            target_pos.x = tgt_idx
             self.target_pos_pub.publish(target_pos)
+            print("target_pos:", self.p_search[int(target_pos.x)])
 
         self.Pcur = np.zeros((self.mav_num,3))
         self.p_search = np.zeros((self.mav_num,3))

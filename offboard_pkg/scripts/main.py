@@ -69,7 +69,7 @@ if __name__=="__main__":
     # 先起飞然后再执行其他的任务
     # 起飞函数会先解锁然后切换至offboard模式
     px4_control.takeoff(vz=1.25,h=2.25)
-    time.sleep(5)
+    time.sleep(2)
 
 
     # 执行一些奇奇怪怪的任务 
